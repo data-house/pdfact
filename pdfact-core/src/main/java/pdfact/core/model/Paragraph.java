@@ -2,6 +2,7 @@ package pdfact.core.model;
 
 import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -12,7 +13,7 @@ import pdfact.core.util.list.ElementList;
  * 
  * @author Claudius Korzen
  */
-public class Paragraph extends Element implements HasWords, HasText, HasPositions, HasSemanticRole {
+public class Paragraph extends Element implements HasWords, HasText, HasPositions, HasSemanticRole, HasColor, HasFontFace {
   /**
    * The words of this paragraph.
    */
@@ -194,7 +195,7 @@ public class Paragraph extends Element implements HasWords, HasText, HasPosition
       builder.append(getPositions(), otherParagraph.getPositions());
       builder.append(getSemanticRole(), otherParagraph.getSemanticRole());
       builder.append(getSecondarySemanticRole(),
-          otherParagraph.getSecondarySemanticRole());
+              otherParagraph.getSecondarySemanticRole());
 
       return builder.isEquals();
     }
@@ -210,5 +211,25 @@ public class Paragraph extends Element implements HasWords, HasText, HasPosition
     builder.append(getSemanticRole());
     builder.append(getSecondarySemanticRole());
     return builder.hashCode();
+  }
+
+  @Override
+  public Color getColor() {
+    return this.characterStatistic.colorFrequencies.getMostCommonObject();
+  }
+
+  @Override
+  public void setColor(Color color) {
+    throw new NotImplementedException("Paragraph does not allow to explicitly set the Color");
+  }
+
+  @Override
+  public FontFace getFontFace() {
+    return this.characterStatistic.fontFaceFrequencies.getMostCommonObject();
+  }
+
+  @Override
+  public void setFontFace(FontFace fontFace) {
+    throw new NotImplementedException("Paragraph does not allow to explicitly set the FontFace");
   }
 }
