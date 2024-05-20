@@ -1,6 +1,8 @@
 package pdfact.core.model;
 
 import java.util.List;
+
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import pdfact.core.util.list.ElementList;
@@ -10,7 +12,7 @@ import pdfact.core.util.list.ElementList;
  *
  * @author Claudius Korzen
  */
-public class Word extends Element implements HasCharacters, HasText, HasPositions {
+public class Word extends Element implements HasCharacters, HasText, HasPositions, HasColor, HasFontFace  {
   /**
    * The characters of this word.
    */
@@ -254,5 +256,25 @@ public class Word extends Element implements HasCharacters, HasText, HasPosition
     builder.append(isHyphenated());
     builder.append(isDehyphenated());
     return builder.hashCode();
+  }
+
+  @Override
+  public Color getColor() {
+    return this.characterStatistic.colorFrequencies.getMostCommonObject();
+  }
+
+  @Override
+  public void setColor(Color color) {
+    throw new NotImplementedException("Paragraph does not allow to explicitly set the Color");
+  }
+
+  @Override
+  public FontFace getFontFace() {
+    return this.characterStatistic.fontFaceFrequencies.getMostCommonObject();
+  }
+
+  @Override
+  public void setFontFace(FontFace fontFace) {
+    throw new NotImplementedException("Paragraph does not allow to explicitly set the FontFace");
   }
 }
