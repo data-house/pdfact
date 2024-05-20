@@ -265,7 +265,7 @@ public class Word extends Element implements HasCharacters, HasText, HasPosition
 
   @Override
   public void setColor(Color color) {
-    throw new NotImplementedException("Paragraph does not allow to explicitly set the Color");
+    throw new NotImplementedException("Word does not allow to explicitly set the Color");
   }
 
   @Override
@@ -275,6 +275,6 @@ public class Word extends Element implements HasCharacters, HasText, HasPosition
 
   @Override
   public void setFontFace(FontFace fontFace) {
-    throw new NotImplementedException("Paragraph does not allow to explicitly set the FontFace");
+    throw new NotImplementedException("Word does not allow to explicitly set the FontFace");
   }
 }
