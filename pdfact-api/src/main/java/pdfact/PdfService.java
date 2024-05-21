@@ -10,23 +10,73 @@ import pdfact.core.util.exception.PdfActException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 
 public class PdfService {
-    public String parsePdf(String filePath) throws PdfActException {
+
+    public String parsePdf(String filePath, String unitSelected, List<String> rolesSelected) throws PdfActException {
+        
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
-        Document pdf = new PdfAct().parse(filePath);
+        PdfAct pdfAct = new PdfAct();
 
-        Set<ExtractionUnit> units = new HashSet<>();
-        units.add(ExtractionUnit.PARAGRAPH);
-
+        Set<ExtractionUnit> unit = new HashSet<>();
         Set<SemanticRole> roles = new HashSet<>();
-        roles.add(SemanticRole.TITLE);
-        roles.add(SemanticRole.HEADING);
-        roles.add(SemanticRole.PAGE_HEADER);
-        roles.add(SemanticRole.PAGE_FOOTER);
-        roles.add(SemanticRole.BODY_TEXT);
+        
+        if (unitSelected != null) {
+            unit = getExtractionUnitSet(unitSelected);
+            pdfAct.setExtractionUnits(unit);
+        }else{
+            unit.add(ExtractionUnit.PARAGRAPH);
+        }
+        
+        if (rolesSelected != null) {
+            roles = convertToSemanticRoles(rolesSelected);
+            pdfAct.setSemanticRoles(roles);
+        }else{
+            for (SemanticRole role : SemanticRole.values()) {
+                roles.add(role);
+            }
+        }
+        
+        String jsonString;
 
-        PdfJsonSerializer serializer = new PdfJsonSerializer(units, roles);
-        return new String(serializer.serialize(pdf), StandardCharsets.UTF_8);
+        try{
+            Document pdf = pdfAct.parse(filePath);
+            PdfJsonSerializer serializer = new PdfJsonSerializer(unit, roles);
+            byte[] serializedPdf = serializer.serialize(pdf);
+            jsonString = new String(serializedPdf, StandardCharsets.UTF_8);
+        
+        } catch (PdfActException e){
+            jsonString = "Errore: " + e.getMessage();
+            e.printStackTrace();
+        }
+
+        return jsonString;
+
     }
+
+    public Set<ExtractionUnit> getExtractionUnitSet(String unit) {
+        Set<ExtractionUnit> unitSelected = new HashSet<>();
+        try {
+            ExtractionUnit extractionUnit = ExtractionUnit.valueOf(unit.toUpperCase());
+            unitSelected.add(extractionUnit);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("L'unità di estrazione '" + unit + "' non è valida.", e);
+        }
+        return unitSelected;
+    }
+
+    public Set<SemanticRole> convertToSemanticRoles(List<String> rolesList) {
+        Set<SemanticRole> roles = new HashSet<>();
+        for (String role : rolesList) {
+            try {
+                SemanticRole semanticRole = SemanticRole.valueOf(role.toUpperCase());
+                roles.add(semanticRole);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Il ruolo '" + role + "' non è valido. Ignorato.", e);
+            }
+        }
+        return roles;
+    }
+
 }
