@@ -12,9 +12,18 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
 
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
+
 public class PdfService {
 
-    public String parsePdf(String filePath, String unitSelected, List<String> rolesSelected) throws PdfActException {
+    public String parsePdf(String fileUrl, String unitSelected, List<String> rolesSelected) throws PdfActException {
         
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
         PdfAct pdfAct = new PdfAct();
@@ -41,18 +50,28 @@ public class PdfService {
         String jsonString;
 
         try{
-            Document pdf = pdfAct.parse(filePath);
+            Path tempFile = downloadFileFromUrl(fileUrl);
+            Document pdf = pdfAct.parse(tempFile.toString());
             PdfJsonSerializer serializer = new PdfJsonSerializer(unit, roles);
             byte[] serializedPdf = serializer.serialize(pdf);
             jsonString = new String(serializedPdf, StandardCharsets.UTF_8);
         
-        } catch (PdfActException e){
+        } catch (PdfActException | IOException e){
             jsonString = "Errore: " + e.getMessage();
             e.printStackTrace();
         }
 
         return jsonString;
 
+    }
+
+    private Path downloadFileFromUrl(String fileUrl) throws IOException {
+        URL url = new URL(fileUrl);
+        Path tempFile = Files.createTempFile("temp", ".pdf");
+        try (InputStream in = url.openStream()) {
+            Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return tempFile;
     }
 
     public Set<ExtractionUnit> getExtractionUnitSet(String unit) {

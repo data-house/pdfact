@@ -22,17 +22,17 @@ public class PdfApi {
         String body = request.body();
         RequestPayload requestPayload = gson.fromJson(body, RequestPayload.class);
 
-        if (requestPayload == null || requestPayload.getPath() == null || requestPayload.getPath().isEmpty()) {
+        if (requestPayload == null || requestPayload.getUrl() == null || requestPayload.getUrl().isEmpty()) {
             response.status(400);
             JsonObject errorResponse = new JsonObject();
-            errorResponse.addProperty("error", "File path is required");
+            errorResponse.addProperty("error", "File url is required");
             return errorResponse;
         }
 
         JsonObject jsonResult;
 
         try {
-            String jsonString = pdfService.parsePdf(requestPayload.getPath(), requestPayload.getUnit(), requestPayload.getRoles());
+            String jsonString = pdfService.parsePdf(requestPayload.getUrl(), requestPayload.getUnit(), requestPayload.getRoles());
             jsonResult = gson.fromJson(jsonString, JsonObject.class);
             response.status(200);
         } catch (Exception e) {
@@ -45,16 +45,16 @@ public class PdfApi {
     }
 
     static class RequestPayload {
-        private String path;
+        private String url;
         private String unit;
         private List<String> roles;
 
-        public String getPath() {
-            return path;
+        public String getUrl() {
+            return url;
         }
 
-        public void setPath(String path) {
-            this.path = path;
+        public void setUrl(String url) {
+            this.url = url;
         }
 
         public String getUnit() {
