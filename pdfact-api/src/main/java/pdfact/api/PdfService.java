@@ -59,7 +59,7 @@ public class PdfService {
         Document pdf = pdfAct.parse(tempFile.toString());
         PdfJsonSerializer serializer = new PdfJsonSerializer(unit, roles);
         byte[] serializedPdf = serializer.serialize(pdf);
-        jsonString = new String(serializedPdf, StandardCharsets.UTF_8);
+        String jsonString = new String(serializedPdf, StandardCharsets.UTF_8);
 
         return jsonString;
 
