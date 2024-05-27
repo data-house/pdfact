@@ -1,4 +1,4 @@
-package pdfact;
+package pdfact.api;
 
 import pdfact.cli.PdfAct;
 import pdfact.cli.model.ExtractionUnit;
@@ -7,59 +7,49 @@ import pdfact.core.model.Document;
 import pdfact.core.model.SemanticRole;
 import pdfact.core.util.exception.PdfActException;
 
-import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.List;
-
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 
 public class PdfService {
 
-    public String parsePdf(String fileUrl, String unitSelected, List<String> rolesSelected) throws PdfActException {
-        
-        System.out.println("Working Directory = " + System.getProperty("user.dir"));
+    public String parsePdf(String fileUrl, String unitSelected, List<String> rolesSelected) throws IOException, PdfActException, IllegalArgumentException {
+
         PdfAct pdfAct = new PdfAct();
 
         Set<ExtractionUnit> unit = new HashSet<>();
-        Set<SemanticRole> roles = new HashSet<>();
-        
+        Set<SemanticRole> roles;
+
         if (unitSelected != null) {
             unit = getExtractionUnitSet(unitSelected);
             pdfAct.setExtractionUnits(unit);
-        }else{
+        } else {
             unit.add(ExtractionUnit.PARAGRAPH);
         }
-        
+
         if (rolesSelected != null) {
             roles = convertToSemanticRoles(rolesSelected);
             pdfAct.setSemanticRoles(roles);
-        }else{
-            for (SemanticRole role : SemanticRole.values()) {
-                roles.add(role);
-            }
+        } else {
+            roles = new HashSet<>(Arrays.asList(SemanticRole.values()));
         }
-        
+
         String jsonString;
 
-        try{
-            Path tempFile = downloadFileFromUrl(fileUrl);
-            Document pdf = pdfAct.parse(tempFile.toString());
-            PdfJsonSerializer serializer = new PdfJsonSerializer(unit, roles);
-            byte[] serializedPdf = serializer.serialize(pdf);
-            jsonString = new String(serializedPdf, StandardCharsets.UTF_8);
-        
-        } catch (PdfActException | IOException e){
-            jsonString = "Errore: " + e.getMessage();
-            e.printStackTrace();
-        }
+        Path tempFile = downloadFileFromUrl(fileUrl);
+        Document pdf = pdfAct.parse(tempFile.toString());
+        PdfJsonSerializer serializer = new PdfJsonSerializer(unit, roles);
+        byte[] serializedPdf = serializer.serialize(pdf);
+        jsonString = new String(serializedPdf, StandardCharsets.UTF_8);
 
         return jsonString;
 
@@ -74,25 +64,25 @@ public class PdfService {
         return tempFile;
     }
 
-    public Set<ExtractionUnit> getExtractionUnitSet(String unit) {
+    public Set<ExtractionUnit> getExtractionUnitSet(String unit) throws IllegalArgumentException {
         Set<ExtractionUnit> unitSelected = new HashSet<>();
         try {
             ExtractionUnit extractionUnit = ExtractionUnit.valueOf(unit.toUpperCase());
             unitSelected.add(extractionUnit);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("L'unità di estrazione '" + unit + "' non è valida.", e);
+            throw new IllegalArgumentException("The extraction unit `" + unit + "` is not valid.", e);
         }
         return unitSelected;
     }
 
-    public Set<SemanticRole> convertToSemanticRoles(List<String> rolesList) {
+    public Set<SemanticRole> convertToSemanticRoles(List<String> rolesList) throws IllegalArgumentException {
         Set<SemanticRole> roles = new HashSet<>();
         for (String role : rolesList) {
             try {
                 SemanticRole semanticRole = SemanticRole.valueOf(role.toUpperCase());
                 roles.add(semanticRole);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Il ruolo '" + role + "' non è valido. Ignorato.", e);
+                throw new IllegalArgumentException("The role `" + role + "` is not valid.", e);
             }
         }
         return roles;

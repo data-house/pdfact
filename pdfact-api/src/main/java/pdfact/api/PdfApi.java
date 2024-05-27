@@ -1,16 +1,19 @@
-package pdfact;
-
-import spark.Request;
-import spark.Response;
-import java.util.List;
+package pdfact.api;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import pdfact.api.model.RequestPayload;
+import pdfact.core.util.exception.PdfActException;
+import spark.Request;
+import spark.Response;
+
+import java.io.IOException;
 
 import static spark.Spark.post;
 
 public class PdfApi {
+
     public static void main(String[] args) {
         PdfService pdfService = new PdfService();
         Gson gson = new GsonBuilder().disableHtmlEscaping().create();
@@ -35,43 +38,20 @@ public class PdfApi {
             String jsonString = pdfService.parsePdf(requestPayload.getUrl(), requestPayload.getUnit(), requestPayload.getRoles());
             jsonResult = gson.fromJson(jsonString, JsonObject.class);
             response.status(200);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            response.status(422);
+            jsonResult = new JsonObject();
+            jsonResult.addProperty("error", "Illegal arguments. " + e.getMessage());
+        } catch (IOException e) {
+            response.status(400);
+            jsonResult = new JsonObject();
+            jsonResult.addProperty("error", "An error occurred while downloading the pdf file. " + e.getMessage());
+        } catch (PdfActException e) {
             response.status(500);
             jsonResult = new JsonObject();
-            jsonResult.addProperty("error", "Error processing PDF");
+            jsonResult.addProperty("error", "An error occurred while processing the pdf file.");
         }
-
         return jsonResult;
-    }
-
-    static class RequestPayload {
-        private String url;
-        private String unit;
-        private List<String> roles;
-
-        public String getUrl() {
-            return url;
-        }
-
-        public void setUrl(String url) {
-            this.url = url;
-        }
-
-        public String getUnit() {
-            return unit;
-        }
-
-        public void setUnit(String unit) {
-            this.unit = unit;
-        }
-
-        public List<String> getRoles() {
-            return roles;
-        }
-
-        public void setRoles(List<String> roles) {
-            this.roles = roles;
-        }
     }
 }
 
