@@ -12,6 +12,9 @@ import java.io.IOException;
 
 import static spark.Spark.post;
 
+/**
+ * The API to parse a pdf file.
+ */
 public class PdfApi {
 
     public static void main(String[] args) {

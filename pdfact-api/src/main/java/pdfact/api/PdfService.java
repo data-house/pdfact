@@ -20,12 +20,25 @@ import java.util.List;
 import java.util.Set;
 
 
+/**
+ * The service to process pdf file and extract text.
+ */
 public class PdfService {
 
+    /**
+     * Download a pdf file and create a json representation of its content.
+     *
+     * @param fileUrl:       The url to access the pdf file.
+     * @param unitSelected:  The unit to split text on (e.g., paragraphs, words, characters, etc.).
+     * @param rolesSelected: The roles to extract (e.g., body, title, etc.).
+     * @throws IOException:              If the file download/load goes wrong.
+     * @throws PdfActException:          If the pdf processing or text extraction goes wrong.
+     * @throws IllegalArgumentException: If wrong roles or units are passed by.
+     * @return: A json representation of the extracted text.
+     */
     public String parsePdf(String fileUrl, String unitSelected, List<String> rolesSelected) throws IOException, PdfActException, IllegalArgumentException {
-
         PdfAct pdfAct = new PdfAct();
-
+        String jsonString;
         Set<ExtractionUnit> unit = new HashSet<>();
         Set<SemanticRole> roles;
 
@@ -35,15 +48,12 @@ public class PdfService {
         } else {
             unit.add(ExtractionUnit.PARAGRAPH);
         }
-
         if (rolesSelected != null) {
             roles = convertToSemanticRoles(rolesSelected);
             pdfAct.setSemanticRoles(roles);
         } else {
             roles = new HashSet<>(Arrays.asList(SemanticRole.values()));
         }
-
-        String jsonString;
 
         Path tempFile = downloadFileFromUrl(fileUrl);
         Document pdf = pdfAct.parse(tempFile.toString());
@@ -55,6 +65,13 @@ public class PdfService {
 
     }
 
+    /**
+     * Download a pdf file.
+     *
+     * @param fileUrl: The url to access the pdf file.
+     * @throws IOException: If the file download/load goes wrong.
+     * @return: The path to the downloaded pdf file.
+     */
     private Path downloadFileFromUrl(String fileUrl) throws IOException {
         URL url = new URL(fileUrl);
         Path tempFile = Files.createTempFile("temp", ".pdf");
@@ -64,6 +81,13 @@ public class PdfService {
         return tempFile;
     }
 
+    /**
+     * Validate the given unit.
+     *
+     * @param unit: The unit to split text on (e.g., paragraphs, words, characters, etc.).
+     * @throws IllegalArgumentException: If wrong units are passed by.
+     * @return: The validated unit.
+     */
     public Set<ExtractionUnit> getExtractionUnitSet(String unit) throws IllegalArgumentException {
         Set<ExtractionUnit> unitSelected = new HashSet<>();
         try {
@@ -75,6 +99,13 @@ public class PdfService {
         return unitSelected;
     }
 
+    /**
+     * Validate the list of roles.
+     *
+     * @param rolesList: The roles to extract (e.g., body, title, etc.).
+     * @throws IllegalArgumentException: If wrong roles are passed by.
+     * @return: The validated list of roles.
+     */
     public Set<SemanticRole> convertToSemanticRoles(List<String> rolesList) throws IllegalArgumentException {
         Set<SemanticRole> roles = new HashSet<>();
         for (String role : rolesList) {
