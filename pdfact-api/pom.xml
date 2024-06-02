@@ -7,6 +7,7 @@
         <groupId>pdfact</groupId>
         <artifactId>pdfact-parent</artifactId>
         <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>pdfact-api</artifactId>
@@ -40,6 +41,11 @@
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.36</version>
+        </dependency>
     </dependencies>
 
     <properties>
@@ -48,4 +54,78 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+ <build>
+    <plugins>
+      <!-- Configure the assembly plugin to create an executable jar-file with
+      all dependencies -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4.1</version>
+        <executions>
+          <execution>
+            <id>build-api</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <archive>
+                <manifest>
+                  <mainClass>pdfact.api.PdfApi</mainClass>
+                </manifest>
+                <manifestEntries>
+                  <Multi-Release>true</Multi-Release>
+                </manifestEntries>
+              </archive>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+              <outputDirectory>${project.root.dirs.bin}</outputDirectory>
+              <finalName>${project.basename}</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
+              <attach>false</attach>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      
+      <!-- 
+        Configure the antrun plugin to create an executable resulting from the concatenation
+        of resources/stub.sh and the produced jar file. This will allow the jar-file to be
+        executable like a Linux executable file (without typing java -jar ...). 
+      -->
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <!-- Concat stub.sh and the jar file to ./bin/pdfact -->
+                <concat destfile="${project.files.executable}" binary="yes">
+                  <fileset file="${project.files.stub_sh}"/>
+                  <fileset file="${project.files.jar}"/>
+                </concat>          
+                <!-- Make the script executable. -->
+                <chmod file="${project.files.executable}" perm="755"/>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

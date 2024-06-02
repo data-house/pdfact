@@ -5,14 +5,19 @@ WORKDIR /
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y maven 
 
 COPY pdfact-cli ./pdfact-cli
+COPY pdfact-api ./pdfact-api
 COPY pdfact-core ./pdfact-core
 COPY resources ./resources
 COPY pom.xml .
 
 RUN mvn install -DskipTests
 
+EXPOSE 4567
+
 # Define the entrypoint.
-ENTRYPOINT ["java", "-jar", "/bin/pdfact.jar"]
+ENTRYPOINT ["java", "-cp", "/bin/pdfact.jar"]
+
+CMD ["pdfact.api.PdfApi"]
 
 # Build image.
 # docker build -t pdfact .
