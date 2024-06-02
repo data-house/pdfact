@@ -15,7 +15,9 @@ RUN mvn install -DskipTests
 EXPOSE 4567
 
 # Define the entrypoint.
-ENTRYPOINT ["java", "-cp", "/bin/pdfact.jar", "pdfact.api.PdfApi"]
+ENTRYPOINT ["java", "-cp", "/bin/pdfact.jar"]
+
+CMD ["pdfact.api.PdfApi"]
 
 # Build image.
 # docker build -t pdfact .
