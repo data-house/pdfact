@@ -13,7 +13,7 @@ public class RequestPayload {
     /**
      * The unit to split text on (e.g., paragraphs, words, characters, etc.).
      */
-    private String unit;
+    private List<String> unit;
     /**
      * The roles to extract (e.g., body, title, etc.).
      */
@@ -31,11 +31,11 @@ public class RequestPayload {
 
     // ==============================================================================================
 
-    public String getUnit() {
+    public List<String> getUnit() {
         return unit;
     }
 
-    public void setUnit(String unit) {
+    public void setUnit(List<String> unit) {
         this.unit = unit;
     }
 
