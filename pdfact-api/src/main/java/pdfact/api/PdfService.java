@@ -29,21 +29,21 @@ public class PdfService {
      * Download a pdf file and create a json representation of its content.
      *
      * @param fileUrl:       The url to access the pdf file.
-     * @param unitSelected:  The unit to split text on (e.g., paragraphs, words, characters, etc.).
+     * @param unitsSelected:  The unit to split text on (e.g., paragraphs, words, characters, etc.).
      * @param rolesSelected: The roles to extract (e.g., body, title, etc.).
      * @throws IOException:              If the file download/load goes wrong.
      * @throws PdfActException:          If the pdf processing or text extraction goes wrong.
      * @throws IllegalArgumentException: If wrong roles or units are passed by.
      * @return: A json representation of the extracted text.
      */
-    public String parsePdf(String fileUrl, String unitSelected, List<String> rolesSelected) throws IOException, PdfActException, IllegalArgumentException {
+    public String parsePdf(String fileUrl, List<String> unitsSelected, List<String> rolesSelected) throws IOException, PdfActException, IllegalArgumentException {
         PdfAct pdfAct = new PdfAct();
         String jsonString;
         Set<ExtractionUnit> unit = new HashSet<>();
         Set<SemanticRole> roles;
 
-        if (unitSelected != null) {
-            unit = getExtractionUnitSet(unitSelected);
+        if (unitsSelected != null) {
+            unit = getExtractionUnitSet(unitsSelected);
             pdfAct.setExtractionUnits(unit);
         } else {
             unit.add(ExtractionUnit.PARAGRAPH);
@@ -84,19 +84,21 @@ public class PdfService {
     /**
      * Validate the given unit.
      *
-     * @param unit: The unit to split text on (e.g., paragraphs, words, characters, etc.).
+     * @param units: The unit to split text on (e.g., paragraphs, words, characters, etc.).
      * @throws IllegalArgumentException: If wrong units are passed by.
      * @return: The validated unit.
      */
-    public Set<ExtractionUnit> getExtractionUnitSet(String unit) throws IllegalArgumentException {
-        Set<ExtractionUnit> unitSelected = new HashSet<>();
+    public Set<ExtractionUnit> getExtractionUnitSet(List<String> units) throws IllegalArgumentException {
+        Set<ExtractionUnit> unitsSelected = new HashSet<>();
         try {
-            ExtractionUnit extractionUnit = ExtractionUnit.valueOf(unit.toUpperCase());
-            unitSelected.add(extractionUnit);
+            for (String unit : units) {
+                ExtractionUnit extractionUnit = ExtractionUnit.valueOf(unit.toUpperCase());
+                unitsSelected.add(extractionUnit);
+            }
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("The extraction unit `" + unit + "` is not valid.", e);
+            throw new IllegalArgumentException("Some of the provided extraction units are not valid.", e);
         }
-        return unitSelected;
+        return unitsSelected;
     }
 
     /**
