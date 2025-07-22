@@ -9,6 +9,10 @@ import spark.Request;
 import spark.Response;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 import static spark.Spark.post;
 
@@ -25,36 +29,68 @@ public class PdfApi {
     }
 
     private static Object parsePdf(Request request, Response response, PdfService pdfService, Gson gson) {
-        String body = request.body();
-        RequestPayload requestPayload = gson.fromJson(body, RequestPayload.class);
-
-        if (requestPayload == null || requestPayload.getUrl() == null || requestPayload.getUrl().isEmpty()) {
-            response.status(400);
-            JsonObject errorResponse = new JsonObject();
-            errorResponse.addProperty("error", "File url is required");
-            return errorResponse;
-        }
-
-        JsonObject jsonResult;
+        Path tempFile = null;
+        RequestPayload requestPayload = null;
+        List<String> units = null;
+        List<String> roles = null;
 
         try {
-            String jsonString = pdfService.parsePdf(requestPayload.getUrl(), requestPayload.getUnit(), requestPayload.getRoles());
-            jsonResult = gson.fromJson(jsonString, JsonObject.class);
+            if (request.contentType() != null &&
+                    request.contentType().toLowerCase().startsWith("multipart/form-data")) {
+
+                // Handle multipart
+                request.attribute("org.eclipse.jetty.multipartConfig",
+                        new javax.servlet.MultipartConfigElement("/tmp"));
+
+                javax.servlet.http.Part filePart = request.raw().getPart("file");
+                if (filePart == null || filePart.getSize() == 0) {
+                    response.status(400);
+                    return error("File upload is missing");
+                }
+
+                tempFile = Files.createTempFile("upload", ".pdf");
+                try (InputStream in = filePart.getInputStream()) {
+                    Files.copy(in, tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+
+                // Also parse units and roles from `request.queryParams` or `request.formData`
+                String unitsStr = request.raw().getParameter("unit");
+                String rolesStr = request.raw().getParameter("roles");
+
+                if (unitsStr != null) units = List.of(unitsStr.split(","));
+                if (rolesStr != null) roles = List.of(rolesStr.split(","));
+
+            } else {
+                // JSON path
+                String body = request.body();
+                requestPayload = gson.fromJson(body, RequestPayload.class);
+                if (requestPayload == null || requestPayload.getUrl() == null || requestPayload.getUrl().isEmpty()) {
+                    response.status(400);
+                    return error("File url is required");
+                }
+            }
+
+            JsonObject jsonResult;
+
+            if (tempFile != null) {
+                jsonResult = pdfService.parsePdfFromFile(tempFile, units, roles);
+            } else {
+                jsonResult = pdfService.parsePdfFromUrl(requestPayload.getUrl(), requestPayload.getUnit(), requestPayload.getRoles());
+            }
+
             response.status(200);
-        } catch (IllegalArgumentException e) {
-            response.status(422);
-            jsonResult = new JsonObject();
-            jsonResult.addProperty("error", "Illegal arguments. " + e.getMessage());
-        } catch (IOException e) {
-            response.status(400);
-            jsonResult = new JsonObject();
-            jsonResult.addProperty("error", "An error occurred while downloading the pdf file. " + e.getMessage());
-        } catch (PdfActException e) {
+            return jsonResult;
+
+        } catch (Exception e) {
             response.status(500);
-            jsonResult = new JsonObject();
-            jsonResult.addProperty("error", "An error occurred while processing the pdf file.");
+            return error("An error occurred: " + e.getMessage());
         }
-        return jsonResult;
+    }
+
+    private static JsonObject error(String msg) {
+        JsonObject err = new JsonObject();
+        err.addProperty("error", msg);
+        return err;
     }
 }
 
