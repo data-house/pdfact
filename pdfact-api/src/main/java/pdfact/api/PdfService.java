@@ -1,5 +1,7 @@
 package pdfact.api;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import pdfact.cli.PdfAct;
 import pdfact.cli.model.ExtractionUnit;
 import pdfact.cli.pipes.serialize.PdfJsonSerializer;
@@ -29,14 +31,15 @@ public class PdfService {
      * Download a pdf file and create a json representation of its content.
      *
      * @param fileUrl:       The url to access the pdf file.
-     * @param unitsSelected:  The unit to split text on (e.g., paragraphs, words, characters, etc.).
+     * @param unitsSelected: The unit to split text on (e.g., paragraphs, words, characters, etc.).
      * @param rolesSelected: The roles to extract (e.g., body, title, etc.).
      * @throws IOException:              If the file download/load goes wrong.
      * @throws PdfActException:          If the pdf processing or text extraction goes wrong.
      * @throws IllegalArgumentException: If wrong roles or units are passed by.
      * @return: A json representation of the extracted text.
      */
-    public String parsePdf(String fileUrl, List<String> unitsSelected, List<String> rolesSelected) throws IOException, PdfActException, IllegalArgumentException {
+    public JsonObject parsePdfFromUrl(String fileUrl, List<String> unitsSelected, List<String> rolesSelected)
+            throws IOException, PdfActException, IllegalArgumentException {
         PdfAct pdfAct = new PdfAct();
         String jsonString;
         Set<ExtractionUnit> unit = new HashSet<>();
@@ -61,9 +64,40 @@ public class PdfService {
         byte[] serializedPdf = serializer.serialize(pdf);
         jsonString = new String(serializedPdf, StandardCharsets.UTF_8);
 
-        return jsonString;
-
+        Gson gson = new Gson();
+        return gson.fromJson(jsonString, JsonObject.class);
     }
+
+    public JsonObject parsePdfFromFile(Path file, List<String> unitsSelected, List<String> rolesSelected)
+            throws PdfActException {
+        PdfAct pdfAct = new PdfAct();
+        Set<ExtractionUnit> units = new HashSet<>();
+        Set<SemanticRole> roles;
+
+        if (unitsSelected != null) {
+            units = getExtractionUnitSet(unitsSelected);
+            pdfAct.setExtractionUnits(units);
+        } else {
+            units.add(ExtractionUnit.PARAGRAPH);
+        }
+
+        if (rolesSelected != null) {
+            roles = convertToSemanticRoles(rolesSelected);
+            pdfAct.setSemanticRoles(roles);
+        } else {
+            roles = new HashSet<>(Arrays.asList(SemanticRole.values()));
+        }
+
+        Document pdf = pdfAct.parse(file.toString());
+
+        PdfJsonSerializer serializer = new PdfJsonSerializer(units, roles);
+        byte[] serializedPdf = serializer.serialize(pdf);
+        String jsonString = new String(serializedPdf, java.nio.charset.StandardCharsets.UTF_8);
+
+        Gson gson = new Gson();
+        return gson.fromJson(jsonString, JsonObject.class);
+    }
+
 
     /**
      * Download a pdf file.
